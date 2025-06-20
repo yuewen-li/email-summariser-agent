@@ -1,10 +1,12 @@
 import ollama
 from config.settings import MAX_SUMMARY_LENGTH
 import re
+
+PROMO_KEYWORDS = ["subscribe"]
         
 class EmailSummarizer:
     def __init__(self):
-        self.model = "mistral"  # You can also use "llama2" or other models
+        self.model = "tinyllama"
 
     def clean_email_content(self, content):
         """Clean and prepare email content for summarization"""
@@ -17,7 +19,7 @@ class EmailSummarizer:
         """Summarize email content using Ollama"""
         cleaned_content = self.clean_email_content(content)
         
-        prompt = f"""Please provide a concise summary of the following newsletter:
+        prompt = f"""Please provide a concise summary of the following email coming from a newsletter, you don't need to introduce the newsletter, just focus on the content in the email and summarise the events mentioned:
         Subject: {subject}
         Content: {cleaned_content}
         
@@ -29,7 +31,7 @@ class EmailSummarizer:
                 prompt=prompt,
                 options={
                     'temperature': 0.3,
-                    'system': "You are a helpful assistant that creates concise summaries. Keep summaries under 150 words."
+                    'system': "You are a helpful assistant that creates concise summaries."
                 }
             )
             return response['response']
@@ -52,6 +54,17 @@ class EmailSummarizer:
 
         return brief 
     
+    def remove_promotional_content(self, text: str) -> str:
+        # Remove lines containing promo keywords
+        lines = text.splitlines()
+        cleaned_lines = []
+        for line in lines:
+            if not any(keyword in line.lower() for keyword in PROMO_KEYWORDS):
+                cleaned_lines.append(line)
+        cleaned_text = "\n".join(cleaned_lines)
+        
+        return cleaned_text.strip()
+
 if __name__ == "__main__":
     summarizer = EmailSummarizer()
     subject = 'Midjourney video model 📺, Claude Code MCP support 👨\u200d💻, Meta pursues Nat Friedman 💰'
